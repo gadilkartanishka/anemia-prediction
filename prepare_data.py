@@ -70,10 +70,7 @@ n_total = len(df)
 df = df[df["v457"].isin([1, 2, 3, 4])].copy()
 print(f"\nWomen with a hemoglobin result (v457): {len(df):,}  "
       f"(dropped {n_total - len(df):,} with no result)")
-df["anemic"] = df["v457"].isin([1, 2, 3]).astype(int)      # yes/no version
-# Level version, ordered by severity: 0 not anemic, 1 mild, 2 moderate, 3 severe
-# (DHS codes them the other way round: 1 severe ... 4 not anemic)
-df["anemia_level"] = df["v457"].map({4: 0, 3: 1, 2: 2, 1: 3})
+df["anemic"] = df["v457"].isin([1, 2, 3]).astype(int)      # 1 = anemic, 0 = not
 df = df.drop(columns=["v457"])      # label source removed so it cannot leak into features
 
 # ---- Recodes ----
@@ -105,7 +102,6 @@ for raw, new in diet_names.items():
 
 out["weight"] = df["v005"] / 1_000_000
 out["anemic"] = df["anemic"]
-out["anemia_level"] = df["anemia_level"]       # TARGET (4 levels). 'anemic' is the same info collapsed.
 
 # ---- Sanity checks (read these!) ----
 print("\n=== Missing values per column ===")
@@ -118,9 +114,6 @@ print(out.groupby("pregnant")["bmi"].apply(lambda s: f"{s.isna().mean():.1%} mis
 print(f"\n=== Anemia prevalence ===")
 print(f"Unweighted: {out['anemic'].mean():.1%}")
 print(f"Weighted (survey weights): {np.average(out['anemic'], weights=out['weight']):.1%}")
-
-print("\n=== Share of women at each anemia level (0 none, 1 mild, 2 moderate, 3 severe) ===")
-print(out["anemia_level"].value_counts(normalize=True).sort_index().round(4).to_string())
 
 print("\n=== Prevalence by wealth index (expect it to fall as wealth rises) ===")
 print(out.groupby("wealth_index")["anemic"].mean().round(3).to_string())
